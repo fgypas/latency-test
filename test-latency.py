@@ -10,16 +10,21 @@ b = sys.argv[2]
 
 l = [a, b]
 
-pool = mp.Pool(processes = (mp.cpu_count() - 1))
+# Store subprocess handles (Popen objects).
+subprocesses = []
+
+# Launch subprocesses in the background.
 for filename in l:
     f_in = filename
     f_out = filename + "out.tsv"
-    cmd = ['python', 'read_file.py', f_in, f_out]
-    pool.apply_async(subprocess.Popen, (cmd,))
-pool.close()
-pool.join()
+    proc = subprocess.Popen(['python', 'read_file.py', f_in, f_out])
+    subprocesses.append(proc)
 
-time.sleep(0.1)
+# Wait for each subprocess to finish.
+for proc in subprocesses:
+    if proc.wait() != 0:
+        # Error occurred, handle it however you want
+        raise RuntimeError('Subprocess failed with nonzero exit code')
 
 df1 = pd.read_csv(a + "out.tsv")
 df2 = pd.read_csv(b + "out.tsv")
